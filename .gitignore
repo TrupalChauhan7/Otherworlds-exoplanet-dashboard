@@ -1,0 +1,24 @@
+# --- R session cruft ---
+.Rhistory
+.RData
+.Rapp.history
+.Rproj.user/
+*.Rproj
+
+# --- macOS / editors ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- Backups / archives ---
+*.zip
+_pristine_backup_*
+
+# --- renv (commit lockfile + activate script; ignore the local library) ---
+renv/library/
+renv/local/
+renv/cellar/
+renv/staging/
+
+# --- shinyapps.io deploy metadata (may embed account name) ---
+rsconnect/

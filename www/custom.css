@@ -1,0 +1,988 @@
+/* ============================================================================
+   Beyond Our Solar System — design system
+   Implements QUALITY_STANDARD.md §2 exactly. Every colour / type / spacing /
+   radius / shadow value below is one of the standard's tokens (declared once in
+   :root) or a documented derivation of one (rgba tints of --ink for shadows,
+   rgba tints of --accent for note surfaces). No ad-hoc values.
+
+   Creative direction: light high-clarity workspace framed by dark "cosmic"
+   chrome (header + sidebar), tying the app to the hero identity while the
+   content area stays a light workspace. The 5 method colours live ONLY in the
+   charts (R/02_plot_helpers.R) so UI chrome never competes with data colour.
+
+   TYPOGRAPHY — a serif for the editorial moments, Inter for the working UI.
+   Fraunces (variable display serif) carries ONLY the four places
+   the eye lands first: the hero title, the tab headlines, section h2 and the
+   OTHERWORLDS wordmark. Everything else is Inter. The split is deliberate:
+     • A display serif is doing its job at 24px+ and gets delicate below that,
+       so the SMALLER titles (card titles, rail title/subhead) stay Inter —
+       crisp at 15-18px where a serif would look frail.
+     • ALL numbers stay Inter. Fraunces has no tabular figures, so serif stat
+       values would not align in a column; Inter's tabular-nums does.
+     • CHARTS are untouched (Inter via showtext), so chart text still matches the
+       surrounding UI rather than the headline voice.
+
+   HIERARCHY comes from SIZE + COLOUR + SPACE, not from weight. Three ink tiers:
+     • #141A24  --ink            headings, titles, the focal stat numbers
+     • #3B4252  --ink-body       running prose            (10.06:1 on white, AAA)
+     • #5B6472  --ink-secondary  captions, notes, takeaways
+   Colour was the missing axis: with body text at heading-black, Inter's sturdy
+   strokes read heavier than the airy serif titles above them, so the page title
+   lost to its own body copy. Softening the prose fixes that without touching
+   weight, and the scale keeps clear gaps (headline ~30px > card title 18px >
+   body 15px) so no two levels sit close enough to be confused.
+
+   WEIGHT — a deliberately NARROW band; nothing in the app is bolder than 600.
+     • 600  stat numbers + hero stat (focal via SIZE and darkest ink, NOT by
+            out-bolding); rail title + rail subhead (dark-surface chrome)
+     • 500  card titles, nav links, control labels
+     • 400  body, captions, notes, takeaways
+     • 500  hero title, tab headlines, h2, wordmark (Fraunces — a REAL medium)
+   Fraunces is variable (wght 100-900), which is why it replaced Instrument
+   Serif: that face shipped 400 only, so its thin strokes could not be given
+   presence without the browser synthesising a smeared fake bold. 500 is a
+   designed medium; the serif is capped there to stay elegant, never heavy.
+   Inter-Bold stays declared below as a real cut, so anything that does request
+   bold gets a designed face rather than a synthesised one — but nothing does.
+
+   ALL faces are bundled in www/fonts/ and served locally - there is NO runtime
+   Google Fonts request, so the dashboard renders identically offline, on a
+   locked-down server and in the static PDF export:
+     • UI  — local @font-face below. Inter v4.1 (SIL OFL) as static TTFs;
+             Fraunces (SIL OFL) as a single variable font (woff2 + ttf).
+     • CHARTS — the same Inter TTFs are registered in R with sysfonts/showtext at
+             startup (see app.R) and applied via theme_exo(base_family), so
+             ggplot axis text, labels, titles and captions render in Inter and
+             MATCH this UI instead of the graphics device's generic sans.
+
+   NUMERALS: tabular + lining figures are switched on wherever numbers line up
+   or are compared (tables, numeric outputs, stat values). Inter's default
+   proportional figures make digits different widths, so columns of numbers fail
+   to align — tabular-nums fixes that; lining-nums keeps digits at cap height.
+   ============================================================================ */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/Inter-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/Inter-Medium.ttf') format('truetype');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/Inter-SemiBold.ttf') format('truetype');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/Inter-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Inter';
+  src: url('fonts/Inter-Italic.ttf') format('truetype');
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+
+/* One variable file carries the whole wght 100-900 range (see WEIGHT above for
+   why that matters). opsz is wired to font-optical-sizing: auto on the serif
+   elements below, so Fraunces adjusts its own contrast and letterform detail to
+   the size it is actually set at — display cut for the hero, text cut for h2. */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('fonts/Fraunces-Variable.woff2') format('woff2'),
+       url('fonts/Fraunces-Variable.ttf') format('truetype');
+  font-weight: 300 700;
+  font-style: normal; font-display: swap;
+}
+
+/* --- 1. Design tokens (the only place literal values are defined) --------- */
+:root {
+  /* Colour — UI chrome (neutral) */
+  --canvas:        #FFFFFF;
+  --app-bg:        #F5F7FA;
+  --card:          #FFFFFF;
+  --ink:           #141A24;   /* headings/titles — the darkest tier */
+  /* Running prose. Body text at heading-black made Inter's sturdy strokes read
+     HEAVIER than the airy serif titles above it, inverting the hierarchy by
+     colour even after the weights were fixed. Softening the body lets the
+     headings sit on top without any extra weight. Measured 10.06:1 on white
+     (AAA needs 7:1), so nothing is traded away for the refinement. */
+  --ink-body:      #3B4252;   /* running text  — middle tier */
+  --ink-secondary: #5B6472;   /* captions/notes — lightest tier */
+  --border:        #E6E9EF;
+  --accent:        #3B4E8C;   /* indigo — UI only, deliberately not a method colour */
+
+  /* Colour — cosmic hero / chrome */
+  --hero-1:        #0B1026;
+  --hero-2:        #131A3A;
+  --hero-text:     #F4F6FD;
+  --hero-sub:      #AEB6D6;
+
+  /* Derived, on-token surfaces (documented derivations, not new colours) */
+  --accent-tint:   rgba(59, 78, 140, .06);   /* #3B4E8C @ 6% — note/caveat wash */
+  --hero-hairline: rgba(244, 246, 253, .10); /* --hero-text @ 10% — dividers on dark */
+  --hero-hover:    rgba(244, 246, 253, .06); /* --hero-text @ 6%  — hover on dark   */
+
+  /* Typography */
+  --font-serif:   'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Type scale (1.25) */
+  --fs-small:  13px;
+  --fs-body:   15px;
+  --fs-title:  18px;   /* card title */
+  --fs-h2:     24px;   /* section h2 */
+
+  /* Spacing — 8-pt grid (only these values are used anywhere) */
+  --s1:  4px;
+  --s2:  8px;
+  --s3:  12px;
+  --s4:  16px;
+  --s6:  24px;
+  --s8:  32px;
+  --s12: 48px;
+
+  /* Layout */
+  --rail-w:      300px;   /* collapsible left filter rail (8-pt grid: 300 = 37.5 x 8) */
+  --measure:      68ch;   /* comfortable line length for reading blocks (~60-75 chars) */
+
+  /* Cards */
+  --radius:       12px;
+  --radius-sm:    8px;   /* buttons/inputs = one 8-pt step */
+  --shadow:       0 1px 2px rgba(20, 26, 36, .05);   /* rgb(20,26,36) = --ink */
+  --shadow-hover: 0 4px 16px rgba(20, 26, 36, .08);
+
+  /* Motion */
+  --motion: 150ms ease;
+}
+
+/* --- 2. Base typography --------------------------------------------------- */
+body,
+.exo-card,
+.btn,
+.form-control,
+.selectize-input,
+label {
+  font-family: var(--font-body);
+}
+
+body {
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  /* Prose inherits the middle tier; headings/titles opt back up to --ink
+     explicitly, which is what creates the three-tier ink hierarchy. */
+  color: var(--ink-body);
+}
+
+/* Base headings: the two big levels take the serif, h3/h4 stay Inter because
+   they land at card-title sizes where the serif gets frail. The class rules
+   further down (.tab-headline, .exo-card-title, ...) are what actually govern
+   the app's real headings; these are the sensible fallback for bare tags. */
+h1, h2 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  color: var(--ink);
+}
+h3, h4,
+.exo-card-title,
+.navbar-brand {
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+/* Tab section titles (h2() at the top of a tab, e.g. Conclusions) */
+.tab-content h2 {
+  font-family: var(--font-serif);
+  font-size: calc(var(--fs-h2) + 3px);   /* serif reads smaller at equal px */
+  /* 500 is REAL here: Fraunces carries wght 100-900, so this is a designed
+     medium, not a synthesised bold. Capped at 500 to stay elegant. */
+  font-weight: 500;
+  font-optical-sizing: auto;
+  margin: 0 0 var(--s3) 0;
+  color: var(--ink);
+}
+
+a { color: var(--accent); }
+a:hover, a:focus { color: var(--accent); text-decoration: underline; }
+
+/* --- 2b. Numerals: tabular + lining where figures align or are compared ---
+   Inter defaults to PROPORTIONAL figures (a "1" is narrower than a "0"), so
+   columns of numbers in a table do not line up vertically. tabular-nums gives
+   every digit the same advance width; lining-nums keeps them at cap height.
+   Applied to the data tables, the medians table and inline numeric outputs —
+   i.e. everywhere numbers are read as a column or compared against each other. */
+table.dataTable,
+.dataTables_wrapper,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate,
+#t_medians table,
+.shiny-table,
+.cosmic-hero .hero-stat,
+.msb-share {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;   /* fallback for older engines */
+}
+/* Right-align numeric table columns so tabular figures actually pay off. */
+#t_medians table td:last-child,
+.shiny-table td:not(:first-child) { text-align: right; }
+
+/* renderTable() emits an auto-width table sized to its CONTENT, so in a col-6
+   card the two columns hugged the left and left a wide empty band on the right.
+   Spanning the card turns it into a ledger: label left, value right, the eye
+   travelling between them. Scoped to #t_medians so the Earth-context data table
+   (which has its own DataTables sizing) is untouched.
+   !important is required, not sloppiness: renderTable() writes style="width:auto"
+   as an INLINE attribute on the <table>, and an inline style outranks any
+   stylesheet selector. This is the only way to override it without patching the
+   server-side render call. */
+#t_medians table,
+#t_medians .table { width: 100% !important; }
+
+/* --- 3. App background + fixed-navbar offset ----------------------------- */
+body { background-color: var(--app-bg); padding-top: 56px; }  /* 56px = navbar height */
+/* Breathing room between the chrome (navbar/ribbon) and each page's headline */
+.tab-content > .tab-pane {
+  padding-top: var(--s6);
+  padding-bottom: var(--s8);
+}
+/* Home has no ribbon above it, so it only needs a small gap under the navbar */
+.tab-content > .tab-pane[data-value="home"] { padding-top: var(--s4); }
+
+/* --- 4. Navbar — cosmic chrome (Bootstrap 3) ----------------------------- */
+.navbar-default {
+  background: linear-gradient(90deg, var(--hero-1) 0%, var(--hero-2) 100%);
+  border: none;
+  border-bottom: 1px solid var(--hero-hairline);
+  border-radius: 0;
+  min-height: 56px;
+}
+.navbar-default .navbar-brand {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  font-size: 21px;                    /* logo:menu = 21:14 = 60:40 hierarchy */
+  letter-spacing: .2px;
+  color: var(--hero-text);
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus { color: var(--hero-text); }
+/* Brand wordmark: orbit glyph + text */
+.brand-wordmark { display: inline-flex; align-items: center; gap: var(--s2); }
+.brand-orbit { flex: 0 0 auto; }
+.brand-orbit ellipse { stroke: var(--hero-text); }
+.brand-orbit circle { fill: var(--hero-text); }
+.brand-text { letter-spacing: 1px; }
+.navbar-default .navbar-nav > li > a {
+  font-family: var(--font-body);
+  font-size: 14px;                    /* menu:logo = 14:21 = 40:60 hierarchy */
+  font-weight: 500;
+  letter-spacing: .2px;
+  color: var(--hero-sub);
+  height: 56px;                       /* fill + vertically centre in the 56px navbar */
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s4);               /* horizontal only; flex handles the vertical */
+  /* transparent borders top & bottom so the active bottom-rule doesn't shift text */
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+  color: var(--hero-text);
+  background: var(--hero-hover);
+}
+.navbar-default .navbar-nav > li.active > a,
+.navbar-default .navbar-nav > li.active > a:hover,
+.navbar-default .navbar-nav > li.active > a:focus {
+  color: var(--hero-text);
+  background: var(--hero-hover);
+  border-bottom-color: var(--accent);   /* indigo active indicator */
+}
+/* Mobile collapse toggle */
+.navbar-default .navbar-toggle { border-color: var(--hero-hairline); }
+.navbar-default .navbar-toggle .icon-bar { background: var(--hero-sub); }
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus { background: var(--hero-hover); }
+
+/* --- 5. Filters: navbar toggle + collapsible left rail ------------------- */
+/* The rail DOCKS at the left and PUSHES the content right, rather than covering
+   it as the old overlay drawer did: a filter and the chart it drives must be
+   co-visible (direct manipulation) so the effect of a change is seen at once.
+   Part of the dark "cosmic chrome" that frames the light workspace. */
+
+/* Navbar "Filters" button = collapse/expand toggle (navbar z-index 1030).
+   Hidden by default so it never flashes on Home before the tab condition runs. */
+.filter-toggle-wrap {
+  display: none;
+  position: fixed;
+  top: 10px;
+  right: var(--s4);
+  z-index: 1040;
+}
+.btn-filter-toggle {
+  background: transparent;
+  color: var(--hero-sub);
+  border: 1px solid var(--hero-hairline);
+  border-radius: var(--radius-sm);
+  padding: var(--s2) var(--s3);
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+}
+.btn-filter-toggle:hover,
+.btn-filter-toggle:focus {
+  background: var(--hero-hover);
+  color: var(--hero-text);
+  border-color: var(--accent);
+}
+/* Pressed state = rail expanded. This is the ONLY reopen control, so it must
+   read unambiguously as a toggle rather than a plain button. */
+.btn-filter-toggle[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--hero-text);
+  border-color: var(--accent);
+}
+
+/* Wrapper is hidden until the tab condition runs, so nothing flashes on Home. */
+.filter-rail-wrap { display: none; }
+body.has-filter-rail .filter-rail-wrap { display: block; }
+
+.filter-rail {
+  position: fixed;
+  top: 56px;                        /* docked directly under the fixed navbar */
+  left: 0;
+  width: var(--rail-w);
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;                    /* above content, below the navbar */
+  background: linear-gradient(180deg, var(--hero-2) 0%, var(--hero-1) 100%);
+  border-right: 1px solid var(--hero-hairline);
+  transform: translateX(0);
+  transition: transform var(--motion);
+}
+body.rail-collapsed .filter-rail { transform: translateX(-100%); }
+
+/* CONTENT PUSH — the whole point of the rail. Only when the rail is both
+   present (analytical tab) and expanded. Both classes are set by the server. */
+.tab-content { transition: margin-left var(--motion); }
+body.has-filter-rail:not(.rail-collapsed) .tab-content { margin-left: var(--rail-w); }
+
+/* (No floating reopen button: the navbar "Filters" button is the single toggle,
+   so nothing floats over the page heading when the rail is collapsed.) */
+
+.filter-rail .rail-header {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 56px;
+  box-sizing: border-box;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s4);
+  background: var(--hero-2);
+  border-bottom: 1px solid var(--hero-hairline);
+}
+.filter-rail .rail-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  color: var(--hero-text);
+}
+.filter-rail .rail-collapse {
+  background: transparent;
+  border: none;
+  color: var(--hero-sub);
+  padding: var(--s1) var(--s2);
+  line-height: 1;
+}
+.filter-rail .rail-collapse:hover,
+.filter-rail .rail-collapse:focus {
+  background: var(--hero-hover);
+  color: var(--hero-text);
+}
+.filter-rail .rail-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: var(--s4);
+}
+
+/* --- Inputs restyled for legibility ON DARK -----------------------------
+   Measured WCAG contrast against the rail gradient (#131A3A -> #0B1026):
+     --hero-text  #F4F6FD on gradient : 15.73 - 17.42 : 1  (AAA)
+     --hero-sub   #AEB6D6 on gradient :  8.46 -  9.37 : 1  (AAA)
+     --hero-text  on --accent #3B4E8C :  7.33 : 1          (AAA) slider pill/reset
+     --ink on white selectize field   : 17.46 : 1          (AAA)
+   The selectize field is deliberately kept LIGHT: its dropdown menu renders on a
+   light surface, so a light field keeps field and menu consistent and maximises
+   legibility rather than half-theming a dark combobox. */
+.filter-rail .control-label { font-weight: 500; color: var(--hero-text); }
+.filter-rail .checkbox label,
+.filter-rail .radio label { color: var(--hero-text); font-weight: 400; }
+.filter-rail .form-group { margin-bottom: var(--s4); }
+.filter-rail .rail-label {
+  display: block;
+  color: var(--hero-sub);
+  margin-bottom: var(--s1);
+}
+.filter-rail .rail-subhead {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--hero-text);
+  margin: 0 0 var(--s3) 0;
+}
+.filter-rail .rail-divider {
+  border-top: 1px solid var(--hero-hairline);
+  margin: var(--s4) 0;
+}
+.filter-rail .era-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s1);
+  margin-bottom: var(--s3);
+}
+.filter-rail .rail-reset { width: 100%; }
+
+/* Sliders on dark */
+.filter-rail .irs-line { background: var(--hero-hairline); border: none; }
+.filter-rail .irs-bar,
+.filter-rail .irs-bar-edge { background: var(--accent); border-color: var(--accent); }
+.filter-rail .irs-from,
+.filter-rail .irs-to,
+.filter-rail .irs-single { background: var(--accent); color: var(--hero-text); }
+.filter-rail .irs-from:after,
+.filter-rail .irs-to:after,
+.filter-rail .irs-single:after { border-top-color: var(--accent); }
+.filter-rail .irs-min, .filter-rail .irs-max,
+.filter-rail .irs-grid-text { color: var(--hero-sub); }
+.filter-rail .irs-slider { background: var(--hero-text); border: 2px solid var(--accent); }
+
+/* Progressive-disclosure expanders on dark */
+.filter-rail details.whatis > summary { color: var(--hero-sub); }
+.filter-rail details.whatis .whatis-body {
+  background: var(--hero-hover);
+  color: var(--hero-sub);
+}
+
+/* Buttons on dark: ghost era presets, accent-filled reset */
+.filter-rail .btn-default {
+  background: transparent;
+  color: var(--hero-sub);
+  border: 1px solid var(--hero-hairline);
+}
+.filter-rail .btn-default:hover,
+.filter-rail .btn-default:focus {
+  background: var(--hero-hover);
+  color: var(--hero-text);
+  border-color: var(--accent);
+}
+.filter-rail .btn-warning {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--hero-text);
+}
+/* Visible focus on dark (the indigo accent is too low-contrast here) */
+.filter-rail :focus-visible,
+.btn-filter-toggle:focus-visible {
+  outline: 2px solid var(--hero-text);
+  outline-offset: 2px;
+}
+
+/* RESPONSIVE: below 900px pushing would crush the charts, so the rail becomes an
+   overlay (no push) and the server opens it collapsed on narrow viewports. */
+@media (max-width: 900px) {
+  body.has-filter-rail:not(.rail-collapsed) .tab-content { margin-left: 0; }
+  .filter-rail {
+    width: min(88vw, var(--rail-w));
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+/* --- 6. Card system (exo-card) ------------------------------------------- */
+.exo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--motion);
+  margin-bottom: var(--s6);
+}
+.exo-card:hover { box-shadow: var(--shadow-hover); }   /* hover lift */
+.exo-card-title {
+  font-family: var(--font-body);
+  font-size: var(--fs-title);
+  /* 500, not 600: a card title is a SECOND-level label. At 600 it competed with
+     the serif page headline above it and won, which is what inverted the
+     hierarchy. Rail title/subhead stay 600 — they are chrome, not page content. */
+  font-weight: 500;
+  color: var(--ink);
+  border-bottom: 1px solid var(--border);
+  padding: var(--s4);
+  margin: 0;
+}
+.exo-card-body { padding: var(--s4); }
+
+/* Compact control sitting directly above the chart it drives (no wasted gap). */
+.inline-control { margin-bottom: var(--s2); }
+.inline-control .form-group,
+.inline-control .shiny-input-container { margin-bottom: 0; }
+.inline-control .control-label { font-weight: 500; color: var(--ink); margin-bottom: var(--s1); }
+
+/* Action row above a results table (e.g. the download button). */
+.table-actions { margin-bottom: var(--s3); }
+
+/* (Stock valueBox styling removed — the app uses reactive .msb-bar bands.) */
+
+/* --- 8. Buttons ---------------------------------------------------------- */
+.btn {
+  font-family: var(--font-body);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--motion), box-shadow var(--motion);
+}
+/* Primary / accent actions */
+.btn-primary, .btn-warning {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--hero-text);
+}
+.btn-primary:hover, .btn-warning:hover,
+.btn-primary:focus, .btn-warning:focus {
+  background: var(--hero-2);
+  border-color: var(--hero-2);
+  color: var(--hero-text);
+}
+/* (Era-preset button styling now lives with the dark rail rules in §5.) */
+.btn-xs { margin: var(--s1) var(--s1); }
+
+/* --- 9. Inputs — recolour stock blue to indigo --------------------------- */
+/* ion.rangeSlider (sliderInput) */
+.irs-bar, .irs-bar-edge {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.irs-from, .irs-to, .irs-single {
+  background: var(--accent);
+  color: var(--hero-text);
+}
+.irs-from:after, .irs-to:after, .irs-single:after { border-top-color: var(--accent); }
+.irs-line { background: var(--border); border: none; }
+.irs-slider {
+  border: 2px solid var(--accent);
+  background: var(--card);
+}
+.irs-min, .irs-max, .irs-grid-text { color: var(--ink-secondary); }
+
+/* (sidebarPanel/.well and its panel-* helpers removed: all per-tab sidebars are
+   gone — global filters live in the left rail, chart controls sit inline above
+   the chart they drive.) */
+
+/* Text inputs & selectize (light fields) */
+.selectize-control { width: 100%; }
+.form-control,
+.selectize-input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+.form-control:focus,
+.selectize-input.focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-tint);
+}
+.selectize-dropdown .active {
+  background: var(--accent);
+  color: var(--hero-text);
+}
+/* The facility filter is multi-select. The remove_button plugin adds one
+   compact control to each selected item, so a single facility can be removed
+   without clearing the rest of the selection. */
+.filter-rail .selectize-control.multi .selectize-input {
+  white-space: normal;
+  min-height: 44px;
+}
+.filter-rail .selectize-control.multi .selectize-input > div.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+}
+.filter-rail .selectize-control.multi .selectize-input > div.item .remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  color: var(--ink-secondary);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  border-radius: 50%;
+}
+.filter-rail .selectize-control.multi .selectize-input > div.item .remove:hover,
+.filter-rail .selectize-control.multi .selectize-input > div.item .remove:focus {
+  color: var(--ink);
+  background: var(--border);
+}
+/* Checkbox / radio accent */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+
+/* --- 10. Content typography helpers -------------------------------------- */
+.lead {
+  font-size: var(--fs-body);
+  color: var(--ink-secondary);
+  max-width: var(--measure);
+  margin-bottom: var(--s4);
+}
+.help-text {
+  color: var(--ink-secondary);
+  font-size: var(--fs-small);
+  display: block;
+  margin-top: var(--s2);
+}
+
+/* --- Rail-aware responsive columns -------------------------------------
+   Bootstrap's breakpoints key off WINDOW width, but the open rail permanently
+   removes var(--rail-w) from the content area. At a 1000px window with the rail
+   open, a `column(6, ...)` chart is only ~330px wide — and a plotly subtitle is
+   anchored at paper x=0, i.e. AFTER the ~60px left margin, so it had barely
+   270px to live in and ran past the card on six charts at once.
+   Stacking the chart columns gives each chart the full content width instead. */
+@media (max-width: 1300px) {
+  body.has-filter-rail:not(.rail-collapsed) .tab-content .row > [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+}
+/* Same treatment with the rail closed, once the window itself is this narrow.
+   Shiny's column() emits col-sm-*, which does not stack until 768px. 1100 and
+   not 992: at a 1000px window with the rail closed each chart was still only
+   ~470px and the multiplicity subtitle ran over the card. */
+@media (max-width: 1100px) {
+  .tab-content .row > [class*="col-"] {
+    width: 100%;
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+}
+
+/* Animated discovery-method share bar (Discovery Story, prime slot).
+   Plain CSS/HTML, not a chart: it is a shape that answers "what is this
+   selection made of?" before any axis has to be read. Colours are injected
+   inline from METHOD_COLOURS in R, so the band and the ten charts encode method
+   identically and this file never duplicates the palette. */
+.msb-bar {
+  display: flex;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;                 /* segments clip to the rounded ends */
+  background: var(--app-bg);        /* shows through when a mix is partial */
+  width: 100%;
+}
+.msb-seg {
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The animation. Long ease-out so the mix visibly MORPHS between filter
+     states instead of jumping — the movement is the point. */
+  transition: width .6s cubic-bezier(.22, 1, .36, 1);
+}
+.msb-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: #FFFFFF;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  /* The five method hues span a wide luminance range, so white text needs a
+     carried shadow rather than a per-colour rule. */
+  text-shadow: 0 1px 2px rgba(20, 26, 36, .45);
+}
+/* Dark ink is used on the pale end of the indigo ramp; a dark shadow there
+   would only muddy it, so the modifier drops the shadow. Colour itself is set
+   inline from label_ink() in R, which measures the segment's luminance. */
+.msb-pct.msb-pct-dark { text-shadow: none; }
+.msb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  margin-top: var(--s3);
+  font-size: var(--fs-small);
+  color: var(--ink-secondary);
+}
+.msb-key { display: inline-flex; align-items: center; gap: var(--s1); }
+.msb-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.msb-name { color: var(--ink-body); }
+.msb-share {
+  color: var(--ink-body);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.msb-empty { color: var(--ink-body); }
+.headline-caption { margin-top: var(--s3); }
+
+/* QA_CHECKLIST §6: motion is decoration here, never information — the widths
+   are already correct without it, so the transition simply stops. */
+@media (prefers-reduced-motion: reduce) {
+  .msb-seg { transition: none; }
+}
+
+/* Headline finding — the Discovery Story tab's prime slot, where four KPI cards
+   used to sit. Same accent-tint + indigo rule as .insight-box (it is the same
+   family of statement, promoted), but full width and set slightly larger with
+   looser leading, because it is now the first thing read on the tab rather than
+   a side note. Body ink, not heading ink: it is a sentence to read, not a title
+   to scan — prominent through position and space, not through weight. */
+.headline-finding {
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--ink-body);
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--s4) var(--s6);
+  margin-bottom: var(--s6);
+}
+
+/* --- 11. Note & caveat surfaces (accent-derived, never a method colour) --- */
+/* Reactive "what changed?" insight box */
+.insight-box {
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--ink-body);
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--s3) var(--s4);
+}
+/* Detection-bias interpretation box (caution by copy + icon, on-brand tint) */
+.warn-box {
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--ink-body);
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--s3) var(--s4);
+}
+/* Earth-context disclaimer — the key caveat, clearly set apart */
+.disclaimer {
+  background: var(--accent-tint);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--s3) var(--s4);
+  margin: var(--s2) 0 var(--s4) 0;
+  color: var(--ink-body);
+  font-size: var(--fs-small);
+}
+.disclaimer b { color: var(--ink-body); }
+
+/* --- 12. Cosmic hero band (styles ready for Phase 2 markup) --------------- */
+.cosmic-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(244,246,253,.35), transparent),
+    radial-gradient(1px 1px at 70% 45%, rgba(244,246,253,.25), transparent),
+    radial-gradient(1px 1px at 40% 70%, rgba(244,246,253,.30), transparent),
+    radial-gradient(1px 1px at 85% 20%, rgba(244,246,253,.20), transparent),
+    radial-gradient(1px 1px at 55% 85%, rgba(244,246,253,.22), transparent),
+    linear-gradient(135deg, var(--hero-1) 0%, var(--hero-2) 100%);
+  color: var(--hero-text);
+  border-radius: var(--radius);
+  padding: var(--s8) var(--s6);      /* one step down: the hero was crowding out
+                                        the guided-entry buttons below the fold */
+  margin-bottom: var(--s6);
+}
+.cosmic-hero .hero-title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  /* +4px over the sans this replaced: the display serif has a smaller apparent
+     size at the same px, so this holds the intended visual weight. */
+  font-size: clamp(32px, 3.9vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--s4) 0;
+  color: var(--hero-text);
+}
+.cosmic-hero .hero-sub {
+  font-size: var(--fs-body);
+  color: var(--hero-sub);
+  max-width: var(--measure);
+  margin: 0 0 var(--s6) 0;
+}
+.cosmic-hero .hero-stat {
+  font-family: var(--font-body);   /* a number, not a headline — Inter, tabular */
+  font-weight: 600;
+  color: var(--hero-text);
+}
+
+/* Guided-entry buttons (base style; wired up in Phase 2) */
+.guided-btn {
+  background: var(--hero-hover);
+  border: 1px solid var(--hero-hairline);
+  color: var(--hero-text);
+  border-radius: var(--radius-sm);
+  padding: var(--s3) var(--s4);
+  transition: background-color var(--motion), border-color var(--motion);
+}
+.guided-btn:hover, .guided-btn:focus {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--hero-text);
+}
+
+/* --- 13. Hero content (Phase 2 markup) ----------------------------------- */
+.cosmic-hero .hero-eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--hero-sub);
+  margin-bottom: var(--s3);
+}
+.cosmic-hero .hero-statline {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  color: var(--hero-sub);
+  margin-bottom: var(--s6);
+}
+.cosmic-hero .hero-statline .hero-stat { font-size: var(--fs-h2); }
+.cosmic-hero .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+.cosmic-hero .hero-actions .guided-btn {
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 500;
+}
+.cosmic-hero .hero-note {
+  color: var(--hero-sub);
+  font-size: var(--fs-small);
+  margin-top: var(--s6);
+  opacity: .8;
+}
+
+/* --- 14. Story-first tab furniture (Phase 3) ----------------------------- */
+.tab-headline {
+  font-family: var(--font-serif);
+  /* Presence comes from SIZE and, now that the face is variable, from a real
+     medium weight. 500 gives the strokes substance without tipping into bold. */
+  font-size: clamp(26px, 2.4vw, 32px);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  line-height: 1.15;
+  letter-spacing: -0.01em;      /* large serif settles slightly tighter */
+  color: var(--ink);
+  margin: 0 0 var(--s1) 0;
+  /* No --measure cap here. The 68ch reading cap is for long-form PROSE, where
+     line length affects reading comfort. A headline is scanned, not read in
+     runs, and capping it made the title wrap early and stop half-way across the
+     page while the stat cards and chart cards below it filled the full width —
+     a ragged right edge with the rail closed. The genuine reading blocks
+     (.lead, .hero-sub, .chart-takeaway, .whatis-body) keep their cap. */
+}
+.tab-notice {
+  font-size: var(--fs-body);
+  color: var(--ink-secondary);
+  margin: 0 0 var(--s6) 0;
+  /* Uncapped for the same reason: it is the headline's second line, and it has
+     to keep the same left/right edges as the title it sits under. */
+}
+
+
+/* One-line plain-English chart takeaway (Phase 4) */
+.chart-takeaway {
+  font-size: var(--fs-small);
+  color: var(--ink-secondary);
+  max-width: var(--measure);
+  border-left: 3px solid var(--accent);
+  padding: var(--s2) var(--s3);
+  margin-top: var(--s3);
+  background: var(--accent-tint);
+  border-radius: var(--radius-sm);
+}
+.chart-takeaway b { color: var(--ink-body); font-weight: 600; }
+
+/* Progressive-disclosure "what's this?" expanders (Phase 5) */
+details.whatis {
+  margin: var(--s2) 0;
+  font-size: var(--fs-small);
+}
+
+/* Keep live filter guidance in the accessibility tree without changing the
+   visible layout or the screenshots used in the report and walkthrough. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+details.whatis > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 500;
+  list-style: none;
+}
+details.whatis > summary::-webkit-details-marker { display: none; }
+details.whatis > summary::before { content: "\24D8"; margin-right: var(--s1); }  /* circled i */
+details.whatis[open] > summary { margin-bottom: var(--s2); }
+details.whatis .whatis-body {
+  color: var(--ink-secondary);
+  line-height: 1.5;
+  max-width: var(--measure);
+  padding: var(--s2) var(--s3);
+  background: var(--app-bg);
+  border-radius: var(--radius-sm);
+}
+
+/* Designed micro-states (Phase 5) */
+.shiny-output-error-validation {
+  color: var(--ink-secondary);
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--s4);
+  font-size: var(--fs-body);
+  text-align: center;
+}
+.too-few-note {
+  font-size: var(--fs-small);
+  color: var(--ink-secondary);
+  margin-top: var(--s2);
+}
+.recalculating { opacity: 0.4; transition: opacity var(--motion); }
+
+/* --- 15. Motion — respect reduced-motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
