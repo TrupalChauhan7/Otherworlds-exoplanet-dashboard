@@ -22,3 +22,6 @@ renv/staging/
 
 # --- shinyapps.io deploy metadata (may embed account name) ---
 rsconnect/
+
+# Cowork app output mirror (not part of the project)
+Claude outputs/
