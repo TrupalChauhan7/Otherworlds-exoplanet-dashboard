@@ -1,0 +1,8 @@
+.git/
+.github/
+tests/
+renv/library/
+_pristine_backup_*
+*.tar.gz
+Claude outputs/
+.Rhistory
