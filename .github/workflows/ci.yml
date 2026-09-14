@@ -10,6 +10,10 @@ jobs:
   tests:
     name: R tests
     runs-on: ubuntu-latest
+    env:
+      # .Rprofile now auto-loads renv; disable it so CI uses the
+      # runner's freshly installed packages instead of a project library.
+      RENV_CONFIG_AUTOLOADER_ENABLED: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
