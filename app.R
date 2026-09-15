@@ -371,7 +371,7 @@ plotly_resize_script <- tags$script(HTML(
        $(document).on('click', '#toggle_filters, #close_filters', schedule);
        $(window).on('resize', schedule);
        // This script is placed in the navbar header, which can be evaluated
-       // before <body> exists. Register the observer only after the DOM is ready.
+       // before the document body exists. Register the observer only after the DOM is ready.
        if(window.MutationObserver){
          new MutationObserver(schedule).observe(document.body,
            { attributes: true, attributeFilter: ['class'] });
