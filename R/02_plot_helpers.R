@@ -32,7 +32,7 @@ SOURCE_CAPTION <- paste("Source: NASA Exoplanet Archive, PSCompPars;",
 
 # Wrap chart subtitles to a fixed measure so they never clip in a narrow column.
 # ggplot does not reflow text, so this is done explicitly at build time.
-wrap_sub <- function(x, width = 52) paste(strwrap(x, width = width), collapse = "\n")
+wrap_sub <- function(x, width = 38) paste(strwrap(x, width = min(width, 38)), collapse = "\n")
 
 # Cache-busting version, included in EVERY bindCache() key. Chart appearance/code
 # is not part of the automatic cache key (only data inputs are), so a chart-code
@@ -62,7 +62,8 @@ wrap_sub <- function(x, width = 52) paste(strwrap(x, width = width), collapse = 
 #   v26 -> fixed three-column facet geometry and added vertical row spacing
 #   v27 -> Detection-bias facets use WebGL and no longer build unused hover text
 #   v28 -> Detection-bias facet rows spaced so strip labels never overlap panels
-CACHE_VERSION <- "v28"
+#   v29 -> mobile: subtitles wrapped to phone width; distribution x-labels angled
+CACHE_VERSION <- "v29"
 
 # Sequential single-hue ramp for the ORDINAL size variable (Earth-size -> Giant).
 # Shade encodes size order: palest for Earth-size, darkening to the deepest for
@@ -207,7 +208,7 @@ as_interactive <- function(p, filename = "chart", webgl = FALSE, tooltip = "text
       # an HTML break because Plotly annotations and axis titles render HTML.
       plain_title <- gsub("<br\\s*/?>|\\n", " ", title_text, perl = TRUE)
       is_y <- grepl("^yaxis", nm)
-      wrap_width <- if (is_y) 28 else 36
+      wrap_width <- if (is_y) 28 else 30
       wrapped_title <- paste(strwrap(plain_title, width = wrap_width), collapse = "<br>")
       if (is.list(title)) {
         b$x$layout[[nm]]$title$text <- wrapped_title
@@ -293,7 +294,7 @@ as_interactive <- function(p, filename = "chart", webgl = FALSE, tooltip = "text
     text = to_html(sub), x = 0, xref = "paper", xanchor = "left",
     y = 1, yref = "paper", yanchor = "bottom", yshift = 12 + strip_px,
     align = "left", showarrow = FALSE,
-    font = list(family = PLOTLY_FONT, size = 12.5, color = "#4D4D4D"))))
+    font = list(family = PLOTLY_FONT, size = 11, color = "#4D4D4D"))))
   if (n_cap > 0) extra <- c(extra, list(list(
     text = to_html(cap), x = 1, xref = "paper", xanchor = "right",
     y = 1, yref = "paper", yanchor = "bottom", yshift = sub_px + 10 + strip_px,
@@ -404,7 +405,7 @@ plot_timeline <- function(df, mode = "annual") {
     scale_fill_method() +
     scale_y_continuous(labels = comma) +
     labs(
-      subtitle = subtitle,
+      subtitle = wrap_sub(subtitle),
       x = "Discovery year", y = ylab, caption = SOURCE_CAPTION
     ) +
     theme_exo()
@@ -643,7 +644,10 @@ plot_distribution <- function(df, variable = c("pl_rade", "pl_bmasse")) {
           else "Planet mass or minimum mass (Earth masses)"
   ggplot(d, aes(discovery_group, .data[[variable]], fill = discovery_group)) +
     geom_boxplot(alpha = 0.85, outlier.alpha = 0.15) +
-    scale_x_discrete(labels = group_n_labels(d$discovery_group)) +
+    scale_x_discrete(labels = function(lv) {
+      tb <- table(d$discovery_group)
+      paste0(lv, "\n(n=", format(as.integer(tb[lv]), big.mark = ",", trim = TRUE), ")")
+    }) +
     scale_y_log10(labels = comma) +
     scale_fill_method() +
     labs(
@@ -652,7 +656,8 @@ plot_distribution <- function(df, variable = c("pl_rade", "pl_bmasse")) {
       x = NULL, y = ylab, caption = SOURCE_CAPTION
     ) +
     theme_exo() +
-    theme(legend.position = "none", axis.text.x = element_text(size = 9))
+    theme(legend.position = "none",
+          axis.text.x = element_text(angle = 45, hjust = 1, size = 9))
 }
 
 # Detection-bias facets: radius vs period, one panel per selected method,
