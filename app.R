@@ -732,7 +732,7 @@ ui <- navbarPage(
     ),
     fluidRow(
       column(7, card("What can each method actually see?",
-        plotlyOutput("p_bias_facets", height = 500),
+        plotlyOutput("p_bias_facets", height = 560),
         div(class = "chart-takeaway",
             tags$b("In plain terms: "),
             "the same size-vs-orbit chart split by method, on identical axes, ",

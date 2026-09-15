@@ -61,7 +61,8 @@ wrap_sub <- function(x, width = 52) paste(strwrap(x, width = width), collapse = 
 #   v25 -> responsive axis-title wrapping, headroom, and shared chart typography
 #   v26 -> fixed three-column facet geometry and added vertical row spacing
 #   v27 -> Detection-bias facets use WebGL and no longer build unused hover text
-CACHE_VERSION <- "v27"
+#   v28 -> Detection-bias facet rows spaced so strip labels never overlap panels
+CACHE_VERSION <- "v28"
 
 # Sequential single-hue ramp for the ORDINAL size variable (Earth-size -> Giant).
 # Shade encodes size order: palest for Earth-size, darkening to the deepest for
@@ -700,7 +701,10 @@ plot_bias_facets <- function(df) {
           strip.text = element_text(size = 8, lineheight = 1.05,
                                     margin = margin(3, 2, 3, 2)),
           panel.spacing.x = unit(6, "pt"),
-          panel.spacing.y = unit(12, "pt"))
+          # Vertical gap between the two facet rows must exceed the strip
+          # label box (two lines: "Method"/"(n=...)" ~ 37px after ggplotly),
+          # or the Imaging/Other headers overlap the Transit/RV panels above.
+          panel.spacing.y = unit(26, "pt"))
 }
 
 # Orbital-period distribution by method (boxplot, log y), n shown per box.
