@@ -414,6 +414,14 @@ rail_script <- tags$script(HTML(
        var el = document.getElementById('close_filters');
        if (el) el.click();
      }
+   });
+   // Mobile: the Bootstrap navbar menu does not auto-collapse when a tab
+   // link is tapped, so it would sit over the page content. Close it on
+   // tab selection, and also when the Filters rail opens, so the two
+   // overlays never stack on a phone.
+   $(document).on('click', '.navbar-collapse .navbar-nav a, #toggle_filters', function(){
+     var c = document.querySelector('.navbar-collapse');
+     if (c && c.classList.contains('in')) { $(c).collapse('hide'); }
    });"
 ))
 

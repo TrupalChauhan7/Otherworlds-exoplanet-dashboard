@@ -350,6 +350,13 @@ body { background-color: var(--app-bg); padding-top: 56px; }  /* 56px = navbar h
   border-color: var(--accent);
 }
 
+/* Mobile (< 768px): Bootstrap collapses the navbar to a hamburger that also
+   sits top-right. Shift the fixed "Filters" toggle to the LEFT of it so the
+   two controls never overlap (56px clears the ~46px hamburger + its margin). */
+@media (max-width: 767px) {
+  .filter-toggle-wrap { right: calc(var(--s4) + 56px); top: 12px; }
+}
+
 /* Wrapper is hidden until the tab condition runs, so nothing flashes on Home. */
 .filter-rail-wrap { display: none; }
 body.has-filter-rail .filter-rail-wrap { display: block; }
