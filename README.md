@@ -3,11 +3,11 @@
 [![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
 ![R](https://img.shields.io/badge/R-4.1%2B-276DC3?logo=r&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Live demo](https://img.shields.io/badge/▶%20Live-demo-brightgreen)](https://YOUR-APP.shinyapps.io/otherworlds)
+[![Live demo](https://img.shields.io/badge/▶%20Live-demo-brightgreen)](https://trupalchauhan.shinyapps.io/otherworlds)
 
 > An interactive **R Shiny** dashboard exploring how our *detection methods* shape what we know about the 6,300+ confirmed planets beyond our Solar System — built for a non-technical audience, with every design choice defensible.
 
-**▶ [Try it live](https://YOUR-APP.shinyapps.io/otherworlds)** &nbsp;·&nbsp; built with R · Shiny · ggplot2 · Plotly
+**▶ [Try it live](https://trupalchauhan.shinyapps.io/otherworlds)** &nbsp;·&nbsp; built with R · Shiny · ggplot2 · Plotly
 
 ![Otherworlds dashboard demo](assets/demo.gif)
 
@@ -54,7 +54,7 @@ shiny::runApp()   # from the project folder
 
 The app ships with both the raw and processed data, so it runs **offline with no downloads**.
 
-Prefer not to install anything? **[Try the live version.](https://YOUR-APP.shinyapps.io/otherworlds)**
+Prefer not to install anything? **[Try the live version.](https://trupalchauhan.shinyapps.io/otherworlds)**
 
 ### 60-second tour
 
