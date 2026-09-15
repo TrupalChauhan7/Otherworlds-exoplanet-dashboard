@@ -63,7 +63,8 @@ wrap_sub <- function(x, width = 38) paste(strwrap(x, width = min(width, 38)), co
 #   v27 -> Detection-bias facets use WebGL and no longer build unused hover text
 #   v28 -> Detection-bias facet rows spaced so strip labels never overlap panels
 #   v29 -> mobile: subtitles wrapped to phone width; distribution x-labels angled
-CACHE_VERSION <- "v29"
+#   v30 -> trimmed two verbose subtitles (caveat already stated elsewhere on tab)
+CACHE_VERSION <- "v30"
 
 # Sequential single-hue ramp for the ORDINAL size variable (Earth-size -> Giant).
 # Shade encodes size order: palest for Earth-size, darkening to the deepest for
@@ -604,7 +605,7 @@ plot_radius_period <- function(df, show_earth = TRUE) {
                                   lab = "Earth"),
                 aes(pl_orbper, pl_rade, label = lab), inherit.aes = FALSE,
                 colour = "grey30", size = 3, fontface = "bold")
-    earth_note <- " Dashed lines mark Earth (radius 1 R Earth, period 365 days)."
+    earth_note <- " Dashed lines mark Earth (1 R Earth, 365-day orbit)."
   }
   # Cautious callout naming the most visible structure (publication treatment).
   # geom_text (not geom_label) because plotly renders text but not label boxes.
@@ -762,7 +763,7 @@ plot_earth_context <- function(df) {
     scale_colour_method() +
     labs(
       subtitle = wrap_sub(sprintf(
-        "%s planets match the current filters. Dashed lines mark Earth (radius 1 R Earth, ~255 K equilibrium temperature) — context only, not a habitability rule.%s",
+        "%s planets match the current filters. Dashed lines mark Earth (1 R Earth, ~255 K).%s",
         comma(nrow(d)), few_points_note(nrow(d))), width = 76),
       x = "Estimated equilibrium temperature (K)",
       y = "Planet radius (Earth radii)",
