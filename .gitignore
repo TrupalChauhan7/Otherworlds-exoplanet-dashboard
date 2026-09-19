@@ -25,3 +25,7 @@ rsconnect/
 
 # Cowork app output mirror (not part of the project)
 Claude outputs/
+
+# Screen recordings (raw demo captures)
+*.mov
+*.mp4
