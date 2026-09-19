@@ -1,6 +1,6 @@
 # 🪐 Otherworlds — Exoplanet Explorer
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/TrupalChauhan7/Otherworlds-exoplanet-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/TrupalChauhan7/Otherworlds-exoplanet-dashboard/actions/workflows/ci.yml)
 ![R](https://img.shields.io/badge/R-4.1%2B-276DC3?logo=r&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Live demo](https://img.shields.io/badge/▶%20Live-demo-brightgreen)](https://trupalchauhan.shinyapps.io/otherworlds)
